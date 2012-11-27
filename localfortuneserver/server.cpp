@@ -97,6 +97,7 @@ Server::Server(QWidget *parent)
 
 void Server::sendFortune()
 {
+  qDebug() << "new connect";
     QByteArray block;
     QDataStream out(&block, QIODevice::WriteOnly);
     out.setVersion(QDataStream::Qt_4_0);
@@ -106,10 +107,51 @@ void Server::sendFortune()
     out << (quint16)(block.size() - sizeof(quint16));
 
     QLocalSocket *clientConnection = server->nextPendingConnection();
-    connect(clientConnection, SIGNAL(disconnected()),
-            clientConnection, SLOT(deleteLater()));
 
     clientConnection->write(block);
     clientConnection->flush();
+
+    while (clientConnection->bytesAvailable() < (int)sizeof(quint32))
+    {
+      qDebug() << "wait";
+      clientConnection->waitForReadyRead();
+    }
+
+
+    connect(clientConnection, SIGNAL(disconnected()), clientConnection, SLOT(deleteLater()));
+
+    QDataStream in(clientConnection);
+    in.setVersion(QDataStream::Qt_4_0);
+    if (clientConnection->bytesAvailable() < (int)sizeof(quint16)) {
+        return;
+    }
+    QString message;
+    in >> message;
+    qDebug() << "msg:" << message;
+    statusLabel->setText(message);
     clientConnection->disconnectFromServer();
+
+
+#if 0
+// read data
+  QDataStream in(clientConnection);
+  in.setVersion(QDataStream::Qt_4_0);
+  quint16 blcok_size=0;
+  QString read_data;
+  if (clientConnection->bytesAvailable() >= (int)sizeof(quint16))
+  {
+    in >> blcok_size;
+    if (!in.atEnd())
+      in >> read_data;
+    qDebug() << "read data: " << read_data;
+  }
+#endif
+
+
+    //QByteArray read_data = clientConnection->readAll();
+    //statusLabel->setText(read_data);
+
+    //qDebug() << "xxx: " << read_data.count();
+#if 1
+#endif
 }

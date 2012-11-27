@@ -73,6 +73,8 @@ private slots:
     void readFortune();
     void displayError(QLocalSocket::LocalSocketError socketError);
     void enableGetFortuneButton();
+    void slot_send_msg();
+    void slot_socket_connected();
 
 private:
     QLabel *hostLabel;
@@ -80,6 +82,8 @@ private:
     QLabel *statusLabel;
     QPushButton *getFortuneButton;
     QPushButton *quitButton;
+    QPushButton *send_button_;
+    QLineEdit *send_msg_;
     QDialogButtonBox *buttonBox;
 
     QLocalSocket *socket;

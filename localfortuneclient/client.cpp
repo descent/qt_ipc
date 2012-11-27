@@ -64,30 +64,56 @@ Client::Client(QWidget *parent)
 
     quitButton = new QPushButton(tr("Quit"));
 
+    send_button_ = new QPushButton(tr("Send message to server")); 
+    send_msg_ = new QLineEdit("msg to server");
+
     buttonBox = new QDialogButtonBox;
     buttonBox->addButton(getFortuneButton, QDialogButtonBox::ActionRole);
+    //buttonBox->addButton(send_button_, QDialogButtonBox::ActionRole);
     buttonBox->addButton(quitButton, QDialogButtonBox::RejectRole);
 
     socket = new QLocalSocket(this);
 
-    connect(hostLineEdit, SIGNAL(textChanged(QString)),
-            this, SLOT(enableGetFortuneButton()));
-    connect(getFortuneButton, SIGNAL(clicked()),
-            this, SLOT(requestNewFortune()));
+    connect(hostLineEdit, SIGNAL(textChanged(QString)), this, SLOT(enableGetFortuneButton()));
+    connect(getFortuneButton, SIGNAL(clicked()), this, SLOT(requestNewFortune()));
     connect(quitButton, SIGNAL(clicked()), this, SLOT(close()));
+
     connect(socket, SIGNAL(readyRead()), this, SLOT(readFortune()));
-    connect(socket, SIGNAL(error(QLocalSocket::LocalSocketError)),
-            this, SLOT(displayError(QLocalSocket::LocalSocketError)));
+    connect(socket, SIGNAL(error(QLocalSocket::LocalSocketError)), this, SLOT(displayError(QLocalSocket::LocalSocketError)));
+    connect(socket, SIGNAL(connected()), this, SLOT(slot_socket_connected()));
+
+    connect(send_button_, SIGNAL(clicked()), this, SLOT(slot_send_msg()));
 
     QGridLayout *mainLayout = new QGridLayout;
     mainLayout->addWidget(hostLabel, 0, 0);
     mainLayout->addWidget(hostLineEdit, 0, 1);
     mainLayout->addWidget(statusLabel, 2, 0, 1, 2);
-    mainLayout->addWidget(buttonBox, 3, 0, 1, 2);
+    mainLayout->addWidget(buttonBox, 5, 0, 1, 2);
+
+    mainLayout->addWidget(send_msg_, 4, 0);
+    mainLayout->addWidget(send_button_, 4, 1);
     setLayout(mainLayout);
 
     setWindowTitle(tr("Fortune Client"));
     hostLineEdit->setFocus();
+}
+
+void Client::slot_socket_connected()
+{
+  qDebug() << "connect to server";
+  //slot_send_msg();
+}
+
+void Client::slot_send_msg()
+{
+  QByteArray block;
+  QDataStream out(&block, QIODevice::WriteOnly);
+  out.setVersion(QDataStream::Qt_4_0);
+  qDebug() << "send msg: " << send_msg_->text();
+  out << send_msg_->text();
+  out.device()->seek(0);
+  socket->write(block);
+  socket->flush();
 }
 
 void Client::requestNewFortune()
@@ -122,6 +148,7 @@ void Client::readFortune()
 
     currentFortune = nextFortune;
     statusLabel->setText(currentFortune);
+  qDebug() << "currentFortune: " << currentFortune;
     getFortuneButton->setEnabled(true);
 }
 
