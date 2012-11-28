@@ -41,11 +41,13 @@
 #ifndef SERVER_H
 #define SERVER_H
 
-#ifdef Q_WS_MAEMO_5
-#include <QWidget>
-#else
-#include <QDialog>
-#endif
+#include <QtGui>
+#include <QtNetwork>
+
+#include <vector>
+
+using namespace std;
+
 
 QT_BEGIN_NAMESPACE
 class QLabel;
@@ -66,12 +68,19 @@ public:
 
 private slots:
     void sendFortune();
+    void slot_send_msg();
+    void slot_get_client_msg();
+    void slot_client_disconnect();
 
 private:
     QLabel *statusLabel;
+    QLineEdit *msg_;
+    QPushButton *send_msg_;
     QPushButton *quitButton;
     QLocalServer *server;
     QStringList fortunes;
+    QString addr_;
+    vector<QLocalSocket *> clients_;
 };
 
 #endif

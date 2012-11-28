@@ -81,6 +81,7 @@ Client::Client(QWidget *parent)
     connect(socket, SIGNAL(readyRead()), this, SLOT(readFortune()));
     connect(socket, SIGNAL(error(QLocalSocket::LocalSocketError)), this, SLOT(displayError(QLocalSocket::LocalSocketError)));
     connect(socket, SIGNAL(connected()), this, SLOT(slot_socket_connected()));
+    connect(socket, SIGNAL(disconnected()), this, SLOT(slot_socket_disconnected()));
 
     connect(send_button_, SIGNAL(clicked()), this, SLOT(slot_send_msg()));
 
@@ -96,6 +97,11 @@ Client::Client(QWidget *parent)
 
     setWindowTitle(tr("Fortune Client"));
     hostLineEdit->setFocus();
+}
+
+void Client::slot_socket_disconnected()
+{
+  qDebug() << "disconnect";
 }
 
 void Client::slot_socket_connected()
@@ -126,30 +132,22 @@ void Client::requestNewFortune()
 
 void Client::readFortune()
 {
-    QDataStream in(socket);
-    in.setVersion(QDataStream::Qt_4_0);
+  QDataStream in(socket);
+  in.setVersion(QDataStream::Qt_4_0);
 
-    if (blockSize == 0) {
-        if (socket->bytesAvailable() < (int)sizeof(quint16))
-            return;
-        in >> blockSize;
-    }
+  quint16 avail_byte = socket->bytesAvailable();
+  qDebug() << "avail_byte: " << avail_byte;
 
-    if (in.atEnd())
-        return;
+  QString read_data;
+  in >> read_data;
 
-    QString nextFortune;
-    in >> nextFortune;
 
-    if (nextFortune == currentFortune) {
-        QTimer::singleShot(0, this, SLOT(requestNewFortune()));
-        return;
-    }
 
-    currentFortune = nextFortune;
-    statusLabel->setText(currentFortune);
-  qDebug() << "currentFortune: " << currentFortune;
-    getFortuneButton->setEnabled(true);
+  qDebug() << "read_data: " << read_data;
+  avail_byte = socket->bytesAvailable();
+  qDebug() << "avail_byte: " << avail_byte;
+  //qDebug() << "currentFortune: " << currentFortune;
+  getFortuneButton->setEnabled(true);
 }
 
 void Client::displayError(QLocalSocket::LocalSocketError socketError)

@@ -75,6 +75,7 @@ private slots:
     void enableGetFortuneButton();
     void slot_send_msg();
     void slot_socket_connected();
+    void slot_socket_disconnected();
 
 private:
     QLabel *hostLabel;

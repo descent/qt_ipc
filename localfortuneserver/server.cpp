@@ -38,9 +38,6 @@
 **
 ****************************************************************************/
 
-#include <QtGui>
-#include <QtNetwork>
-
 #include <stdlib.h>
 
 #include "server.h"
@@ -54,10 +51,17 @@ Server::Server(QWidget *parent)
     : QDialog(parent)
 #endif
 {
+  addr_ = "fortune";
+  msg_ = new QLineEdit(tr("send msg"));
+  send_msg_ = new QPushButton(tr("send msg"));
+  connect(send_msg_, SIGNAL(clicked()), this, SLOT(slot_send_msg()));
+
+
     statusLabel = new QLabel;
     statusLabel->setWordWrap(true);
     quitButton = new QPushButton(tr("Quit"));
     quitButton->setAutoDefault(false);
+
 
     server = new QLocalServer(this);
     if (!server->listen("fortune")) {
@@ -84,6 +88,8 @@ Server::Server(QWidget *parent)
 
     QHBoxLayout *buttonLayout = new QHBoxLayout;
     buttonLayout->addStretch(1);
+    buttonLayout->addWidget(msg_);
+    buttonLayout->addWidget(send_msg_);
     buttonLayout->addWidget(quitButton);
     buttonLayout->addStretch(1);
 
@@ -95,9 +101,30 @@ Server::Server(QWidget *parent)
     setWindowTitle(tr("Fortune Server"));
 }
 
+void Server::slot_client_disconnect()
+{
+  qDebug() << "slot_client_disconnect";
+  clients_[0]->deleteLater();
+}
+
 void Server::sendFortune()
 {
   qDebug() << "new connect";
+  QLocalSocket *clientConnection = server->nextPendingConnection();
+  if (clientConnection == 0)
+  {
+    qDebug() << "no pending connection";
+    return;
+  }
+  else
+  {
+    clients_.push_back(clientConnection);
+    //clients_[0]=clientConnection;
+    connect(clientConnection, SIGNAL(readyRead()), this, SLOT(slot_get_client_msg()));
+    connect(clientConnection, SIGNAL(disconnected()), this, SLOT(slot_client_disconnect()));
+  }
+
+#if 0
     QByteArray block;
     QDataStream out(&block, QIODevice::WriteOnly);
     out.setVersion(QDataStream::Qt_4_0);
@@ -118,7 +145,6 @@ void Server::sendFortune()
     }
 
 
-    connect(clientConnection, SIGNAL(disconnected()), clientConnection, SLOT(deleteLater()));
 
     QDataStream in(clientConnection);
     in.setVersion(QDataStream::Qt_4_0);
@@ -129,6 +155,7 @@ void Server::sendFortune()
     in >> message;
     qDebug() << "msg:" << message;
     statusLabel->setText(message);
+    qDebug() << "clientConnection->disconnectFromServer();";
     clientConnection->disconnectFromServer();
 
 
@@ -152,6 +179,59 @@ void Server::sendFortune()
     //statusLabel->setText(read_data);
 
     //qDebug() << "xxx: " << read_data.count();
-#if 1
 #endif
+}
+
+void Server::slot_send_msg()
+{
+  QLocalSocket *clientConnection = clients_[0];
+  {
+    QByteArray block;
+    QDataStream out(&block, QIODevice::WriteOnly);
+    #if 0
+    out.setVersion(QDataStream::Qt_4_0);
+    out << (quint16)0;
+    out << fortunes.at(qrand() % fortunes.size());
+    out.device()->seek(0);
+    out << (quint16)(block.size() - sizeof(quint16));
+    #endif
+    out << msg_->text();
+    //out.device()->seek(0);
+
+
+    clientConnection->write(block);
+    clientConnection->flush();
+  }
+#if 0
+    while (clientConnection->bytesAvailable() < (int)sizeof(quint32))
+    {
+      qDebug() << "wait";
+      clientConnection->waitForReadyRead();
+    }
+    QDataStream in(clientConnection);
+    in.setVersion(QDataStream::Qt_4_0);
+    if (clientConnection->bytesAvailable() < (int)sizeof(quint16)) {
+        return;
+    }
+    QString message;
+    in >> message;
+    qDebug() << "msg:" << message;
+    statusLabel->setText(message);
+    #endif
+}
+
+void Server::slot_get_client_msg()
+{
+  QLocalSocket *clientConnection = clients_[0];
+
+  QDataStream in(clientConnection);
+  in.setVersion(QDataStream::Qt_4_0);
+  if (clientConnection->bytesAvailable() < (int)sizeof(quint16)) 
+  {
+    return;
+  }
+  QString message;
+  in >> message;
+  qDebug() << "msg:" << message;
+  statusLabel->setText(message);
 }
