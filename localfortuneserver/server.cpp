@@ -46,9 +46,9 @@
 
 Server::Server(QWidget *parent)
 #ifdef Q_WS_MAEMO_5
-    : QWidget(parent)
+    : QWidget(parent), clients_(10)
 #else
-    : QDialog(parent)
+    : QDialog(parent), clients_(10)
 #endif
 {
   addr_ = "fortune";
@@ -118,8 +118,8 @@ void Server::sendFortune()
   }
   else
   {
-    clients_.push_back(clientConnection);
-    //clients_[0]=clientConnection;
+    //clients_.push_back(clientConnection);
+    clients_[0]=clientConnection;
     connect(clientConnection, SIGNAL(readyRead()), this, SLOT(slot_get_client_msg()));
     connect(clientConnection, SIGNAL(disconnected()), this, SLOT(slot_client_disconnect()));
   }
