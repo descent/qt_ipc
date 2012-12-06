@@ -81,6 +81,8 @@ private:
     QStringList fortunes;
     QString addr_;
     vector<QLocalSocket *> clients_;
+    QComboBox *cmd_combobox_;
+
 };
 
 #endif

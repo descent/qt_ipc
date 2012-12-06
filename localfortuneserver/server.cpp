@@ -56,6 +56,22 @@ Server::Server(QWidget *parent)
   send_msg_ = new QPushButton(tr("send msg"));
   connect(send_msg_, SIGNAL(clicked()), this, SLOT(slot_send_msg()));
 
+  cmd_combobox_ = new QComboBox(this);
+  cmd_combobox_->addItem(QString("17"));
+  cmd_combobox_->addItem(QString("18"));
+  cmd_combobox_->addItem(QString("19"));
+  cmd_combobox_->addItem(QString("27"));
+  cmd_combobox_->addItem(QString("28"));
+  cmd_combobox_->addItem(QString("29"));
+  cmd_combobox_->addItem(QString("37"));
+  cmd_combobox_->addItem(QString("38"));
+  cmd_combobox_->addItem(QString("39"));
+  cmd_combobox_->addItem(QString("47"));
+  cmd_combobox_->addItem(QString("48"));
+  cmd_combobox_->addItem(QString("49"));
+  cmd_combobox_->addItem(QString("57"));
+  cmd_combobox_->addItem(QString("58"));
+  cmd_combobox_->addItem(QString("59"));
 
     statusLabel = new QLabel;
     statusLabel->setWordWrap(true);
@@ -64,7 +80,7 @@ Server::Server(QWidget *parent)
 
 
     server = new QLocalServer(this);
-    if (!server->listen("fortune")) {
+    if (!server->listen("client2server")) {
         QMessageBox::critical(this, tr("Fortune Server"),
                               tr("Unable to start the server: %1.")
                               .arg(server->errorString()));
@@ -95,6 +111,7 @@ Server::Server(QWidget *parent)
 
     QVBoxLayout *mainLayout = new QVBoxLayout;
     mainLayout->addWidget(statusLabel);
+    mainLayout->addWidget(cmd_combobox_);
     mainLayout->addLayout(buttonLayout);
     setLayout(mainLayout);
 
@@ -186,6 +203,7 @@ void Server::slot_send_msg()
 {
   QLocalSocket *clientConnection = clients_[0];
   {
+    static int count=2;
     QByteArray block;
     QDataStream out(&block, QIODevice::WriteOnly);
     #if 0
@@ -195,7 +213,19 @@ void Server::slot_send_msg()
     out.device()->seek(0);
     out << (quint16)(block.size() - sizeof(quint16));
     #endif
-    out << msg_->text();
+    out << cmd_combobox_->currentText();
+#if 0
+    if (count == 1)
+    {
+      count = 2;
+      out << QString("17");
+    }
+    else
+    {
+      count = 1;
+      out << QString("19");
+    }
+#endif
     //out.device()->seek(0);
 
 
